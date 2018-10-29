@@ -1,12 +1,19 @@
 
-// TODO constructor with access and refresh tokens
+class SpotifyContextHistory {
+    constructor(accessToken, refreshToken) {
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
+    }
 
-// TODO: self.healing process if access token is expired
+    // TODO: self.healing process if access token is expired
 
-// TODO: get context
+    // TODO: get context
 
-// TODO: merge contexts
+    // TODO: merge contexts
 
-// TODO: context states
+    // TODO: context states
 
-// TODO: play from context
+    // TODO: play from context
+}
+
+module.exports = SpotifyContextHistory;
