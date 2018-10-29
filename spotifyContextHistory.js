@@ -1,11 +1,10 @@
+const SpotifyWebApi = require('spotify-web-api-node');
 
 class SpotifyContextHistory {
-    constructor(accessToken, refreshToken) {
-        this.accessToken = accessToken;
-        this.refreshToken = refreshToken;
+    constructor(accessToken) {
+        this.spotifyWebApi = new SpotifyWebApi();
+        this.spotifyWebApi.setAccessToken(accessToken);
     }
-
-    // TODO: self.healing process if access token is expired
 
     // TODO: get context
 
