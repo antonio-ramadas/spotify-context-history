@@ -1,5 +1,9 @@
 const SpotifyWebApi = require('spotify-web-api-node');
 
+function getId(uri) {
+    return uri.split(':').pop();
+}
+
 class SpotifyContextHistory {
     constructor(accessToken) {
         this.spotifyWebApi = new SpotifyWebApi();
@@ -24,23 +28,27 @@ class SpotifyContextHistory {
             const items = values[0].body.items.reverse();
 
             Object.values(items).forEach((item) => {
-                this.contextHistory[item.context.uri] = item.track;
+                this.contextHistory[item.context.uri] = item.track.uri;
             });
 
             // Parse current playing track
             const item = values[1].body;
-            this.contextHistory[item.context.uri] = item.item;
+            this.contextHistory[item.context.uri] = item.item.uri;
 
             return this.contextHistory;
         });
     }
 
-    getInfo(context) {
-        const id = context.split(':').pop();
+    getContextInfo(uri) {
+        const contextId = getId(uri);
 
-        return this.spotifyWebApi.getPlaylist(id)
-            .catch(() => this.spotifyWebApi.getAlbum(id))
+        return this.spotifyWebApi.getPlaylist(contextId)
+            .catch(() => this.spotifyWebApi.getAlbum(contextId))
             .then(res => res.body);
+    }
+
+    getTrackInfo(uri) {
+        return this.spotifyWebApi.getTrack(getId(uri)).then(res => res.body);
     }
 
     // TODO: play from context
