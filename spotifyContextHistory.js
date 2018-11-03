@@ -4,13 +4,36 @@ class SpotifyContextHistory {
     constructor(accessToken) {
         this.spotifyWebApi = new SpotifyWebApi();
         this.spotifyWebApi.setAccessToken(accessToken);
+
+        // Currently, Spotify only retrieves at most 50 tracks per request
+        this.limitOfTracksPerRequest = 50;
+
+        this.contextHistory = [];
     }
 
-    // TODO: get context
+    setContextHistory(newContext) {
+        this.contextHistory = newContext;
+    }
 
-    // TODO: merge contexts
+    update() {
+        return Promise.all([
+            this.spotifyWebApi.getMyRecentlyPlayedTracks({ limit: this.limitOfTracksPerRequest }),
+            this.spotifyWebApi.getMyCurrentPlayingTrack(),
+        ]).then((values) => {
+            // Parse recently played tracks
+            const items = values[0].body.items.reverse();
 
-    // TODO: context states
+            Object.values(items).forEach((item) => {
+                this.contextHistory[item.context.uri] = item.track;
+            });
+
+            // Parse current playing track
+            const item = values[1].body;
+            this.contextHistory[item.context.uri] = item.item;
+
+            return this.contextHistory;
+        });
+    }
 
     // TODO: play from context
 }
