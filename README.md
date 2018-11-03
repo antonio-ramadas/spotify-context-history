@@ -6,6 +6,7 @@ npm package to work on top of the context history from a Spotify user. You can r
 
  - Valid Access Token (otherwise you'll get just a bunch of failed promises)
  - Spotify scope: `user-read-currently-playing`, `user-read-recently-played` and `user-modify-playback-state`
+ - Premium user account in order to [use the play method](https://developer.spotify.com/documentation/web-api/reference/player/start-a-users-playback/)
 
 ## Installation
 
