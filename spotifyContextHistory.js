@@ -7,7 +7,7 @@ function getId(uri) {
 class SpotifyContextHistory {
     constructor(accessToken) {
         this.spotifyWebApi = new SpotifyWebApi();
-        this.spotifyWebApi.setAccessToken(accessToken);
+        this.setAccessToken(accessToken);
 
         // Currently, Spotify only retrieves at most 50 tracks per request
         this.limitOfTracksPerRequest = 50;
@@ -16,6 +16,10 @@ class SpotifyContextHistory {
         // the keys are the uri of the context (album or playlist)
         // the values are the tracks of the last track played in the given context
         this.contextHistory = [];
+    }
+
+    setAccessToken(token) {
+        this.spotifyWebApi.setAccessToken(token);
     }
 
     getContextHistory() {
