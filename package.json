@@ -1,12 +1,12 @@
 {
-    "name": "project-name",
-    "version": "0.0.0",
+    "name": "spotify-context-history",
+    "version": "0.1.0",
     "author": "António Ramadas",
     "license": "MIT",
-    "description": "",
-    "keywords": [],
-    "homepage": "",
-    "repository": "github:antonio-ramadas/INSERT_HERE_REPOSITORY_NAME",
+    "description": "npm package to work on top of the context history from a Spotify user",
+    "keywords": ["spotify"],
+    "homepage": "https://github.com/antonio-ramadas/spotify-context-history",
+    "repository": "github:antonio-ramadas/spotify-context-history",
     "main": "spotifyContextHistory.js",
     "scripts": {
         "lint": "node_modules/.bin/eslint .",
