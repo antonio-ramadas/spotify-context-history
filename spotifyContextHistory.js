@@ -35,6 +35,10 @@ class SpotifyContextHistory {
         });
     }
 
+    getInfo(context) {
+        return this.spotifyWebApi.getPlaylist(context.split(':').pop()).then(res => res.body);
+    }
+
     // TODO: play from context
 }
 
