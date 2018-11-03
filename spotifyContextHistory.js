@@ -36,7 +36,11 @@ class SpotifyContextHistory {
     }
 
     getInfo(context) {
-        return this.spotifyWebApi.getPlaylist(context.split(':').pop()).then(res => res.body);
+        const id = context.split(':').pop();
+
+        return this.spotifyWebApi.getPlaylist(id)
+            .catch(() => this.spotifyWebApi.getAlbum(id))
+            .then(res => res.body);
     }
 
     // TODO: play from context
