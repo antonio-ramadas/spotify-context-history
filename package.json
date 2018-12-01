@@ -1,6 +1,6 @@
 {
     "name": "spotify-context-history",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "author": "António Ramadas",
     "license": "MIT",
     "description": "npm package to work on top of the context history from a Spotify user",
