@@ -14,7 +14,7 @@ class SpotifyContextHistory {
 
         // `contextHistory` is a map of string to string
         // the keys are the uri of the context (album or playlist)
-        // the values are the tracks of the last track played in the given context
+        // the values are last track played in the given context
         this.contextHistory = [];
     }
 
@@ -22,11 +22,11 @@ class SpotifyContextHistory {
         this.spotifyWebApi.setAccessToken(token);
     }
 
-    getContextHistory() {
+    getRawContextHistory() {
         return this.contextHistory;
     }
 
-    setContextHistory(newContext) {
+    setRawContextHistory(newContext) {
         this.contextHistory = newContext;
     }
 
@@ -44,10 +44,42 @@ class SpotifyContextHistory {
 
             // Parse current playing track
             const item = values[1].body;
-            this.contextHistory[item.context.uri] = item.item.uri;
+            // If the user is currently listening...
+            if (item.context && item.item) {
+                this.contextHistory[item.context.uri] = item.item.uri;
+            }
 
             return this.contextHistory;
         });
+    }
+
+    getContextHistory() {
+        const contextPromises = Object.keys(this.contextHistory)
+            .map(val => this.getContextInfo(val));
+        const trackPromises = Object.values(this.contextHistory)
+            .map(val => this.getTrackInfo(val));
+
+        return Promise.all(contextPromises.concat(trackPromises))
+            .then((spotifyObjs) => {
+                const filledContext = [];
+
+                // The first half are the contexts
+                // The second half are the tracks
+                const context = spotifyObjs.splice(0, spotifyObjs.length / 2);
+
+                context.forEach((value, index) => {
+                    filledContext.push({
+                        context: value,
+                        track: spotifyObjs[index],
+                    });
+                });
+
+                return filledContext;
+            });
+    }
+
+    getUpdatedContextHistory() {
+        return this.update().then(() => this.getContextHistory());
     }
 
     getContextInfo(uri) {
