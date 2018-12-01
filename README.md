@@ -25,6 +25,11 @@ const spotifyContextHistory = new SpotifyContextHistory('valid access token');
 spotifyContextHistory.update()
     .then(console.log, console.error);
 
+// Returns the same as `update()`, but it does not refresh the data and returns the same
+// context from the last update
+spotifyContextHistory.getRawContextHistory()
+    .then(console.log, console.error);
+
 // Returns a promise that resolves to the information about the album/playlist
 // https://developer.spotify.com/documentation/web-api/reference/albums/get-album/
 // https://developer.spotify.com/documentation/web-api/reference/playlists/get-playlist/
@@ -34,6 +39,19 @@ spotifyContextHistory.getContextInfo("album/playlist's id/uri")
 // Returns a promise that resolves to the information about the track
 // https://developer.spotify.com/documentation/web-api/reference/tracks/get-track/
 spotifyContextHistory.getTrackInfo("track's uri/id")
+    .then(console.log, console.error);
+
+// Returns a promise that resolves into an array where each element is a JSON object with 
+// the following attributes:
+//  - context
+//  - track
+// The value of each attribute is the respective information from `getContextInfo()` or  
+// `getTrackInfo()`. The context history used is the one from the last update.
+spotifyContextHistory.getContextHistory()
+    .then(console.log, console.error);
+
+// Returns the same as `getContextHistory()`, but before calling it the data is updated
+spotifyContextHistory.getUpdatedContextHistory()
     .then(console.log, console.error);
 
 // Returns a promise that indicates the success/failure of the play operation
