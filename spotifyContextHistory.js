@@ -4,6 +4,19 @@ function getId(uri) {
     return uri.split(':').pop();
 }
 
+function removeDuplicateEntry(array, entry) {
+    const arr = array;
+    const entryId = getId(entry);
+
+    const found = Object.keys(arr).find(el => getId(el) === entryId);
+
+    if (found) {
+        delete arr[found];
+    }
+
+    return arr;
+}
+
 class SpotifyContextHistory {
     constructor(accessToken) {
         this.spotifyWebApi = new SpotifyWebApi();
@@ -39,6 +52,10 @@ class SpotifyContextHistory {
             const items = values[0].body.items.reverse();
 
             Object.values(items).forEach((item) => {
+                // The same playlist can be accessed through different URIs
+                // First, we find duplicates and then remove
+                this.contextHistory = removeDuplicateEntry(this.contextHistory, item.context.uri);
+
                 this.contextHistory[item.context.uri] = item.track.uri;
             });
 
@@ -46,6 +63,10 @@ class SpotifyContextHistory {
             const item = values[1].body;
             // If the user is currently listening...
             if (item.context && item.item) {
+                // The same playlist can be accessed through different URIs
+                // First, we find duplicates and then remove
+                this.contextHistory = removeDuplicateEntry(this.contextHistory, item.context.uri);
+
                 this.contextHistory[item.context.uri] = item.item.uri;
             }
 
@@ -96,9 +117,11 @@ class SpotifyContextHistory {
 
     // If the context has not been found, it tries to play from the beginning
     play(context) {
+        const key = Object.keys(this.contextHistory).find(el => getId(el) === getId(context));
+
         return this.spotifyWebApi.play({
             context_uri: context,
-            offset: { uri: this.contextHistory[context] },
+            offset: { uri: this.contextHistory[key] },
         })
             .catch(() => this.spotifyWebApi.play({ context_uri: context }));
     }
