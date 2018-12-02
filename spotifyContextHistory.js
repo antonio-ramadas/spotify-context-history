@@ -83,7 +83,8 @@ class SpotifyContextHistory {
 
     // If the context has not been found, it tries to play from the beginning
     play(context) {
-        const element = this.contextHistory.find(el => el.context.id === this[getId](context));
+        const element = this.contextHistory
+            .find(el => el.context.id === SpotifyContextHistory[getId](context));
 
         const options = {
             context_uri: context,
@@ -164,7 +165,7 @@ class SpotifyContextHistory {
         fns.forEach((fn, index) => {
             const bucket = buckets[index];
 
-            const ids = bucket.map(item => this[getId](item.context.uri));
+            const ids = bucket.map(item => SpotifyContextHistory[getId](item.context.uri));
 
             if (ids.length > 0) {
                 promises.push(fn(ids));
