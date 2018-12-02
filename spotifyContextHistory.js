@@ -1,22 +1,5 @@
 const SpotifyWebApi = require('spotify-web-api-node');
 
-function getId(uri) {
-    return uri.split(':').pop();
-}
-
-function removeDuplicateEntry(array, entry) {
-    const arr = array;
-    const entryId = getId(entry);
-
-    const found = Object.keys(arr).find(el => getId(el) === entryId);
-
-    if (found) {
-        delete arr[found];
-    }
-
-    return arr;
-}
-
 // /////////////////////
 // // Private methods //
 // /////////////////////
@@ -26,6 +9,7 @@ const getContextPromises = Symbol('getContextPromises');
 const handleRecentlyPlayedTracksResponse = Symbol('handleRecentlyPlayedTracksResponse');
 const getSuccessfulPlaylistRequests = Symbol('getSuccessfulPlaylistRequests');
 const addToContextHistory = Symbol('addToContextHistory');
+const getId = Symbol('getId');
 
 class SpotifyContextHistory {
     constructor(accessToken) {
@@ -76,7 +60,7 @@ class SpotifyContextHistory {
                 return [shouldUpdate, res];
             })
             .then(([sU, res]) => this[handleRecentlyPlayedTracksResponse](res)
-                .then(ret => [sU, ret]), console.error)
+                .then(ret => [sU, ret]))
             .then(([sU, context]) => {
                 this[addToContextHistory](context);
                 return sU;
@@ -89,117 +73,40 @@ class SpotifyContextHistory {
             });
     }
 
-
-
-
-
-
-
-
-
-
-    getRawContextHistory() {
-        return this.contextHistory;
-    }
-
-    setRawContextHistory(newContext) {
-        this.contextHistory = newContext;
-    }
-
-    /*update() {
-        return Promise.all([
-            this.spotifyWebApi.getMyRecentlyPlayedTracks({ limit: this.limitOfTracksPerRequest }),
-            this.spotifyWebApi.getMyCurrentPlayingTrack(),
-        ]).then((values) => {
-            // Parse recently played tracks
-            const items = values[0].body.items.reverse();
-
-            Object.values(items).forEach((item) => {
-                const { context, track } = item;
-
-                if (context && track) {
-                    // The same playlist can be accessed through different URIs
-                    // First, we find duplicates and then remove
-                    this.contextHistory = removeDuplicateEntry(this.contextHistory, context.uri);
-
-                    this.contextHistory[context.uri] = track.uri;
-                }
-            });
-
-            // Parse current playing track
-            const item = values[1].body;
-            // If the user is currently listening...
-            if (item.context && item.item) {
-                // The same playlist can be accessed through different URIs
-                // First, we find duplicates and then remove
-                this.contextHistory = removeDuplicateEntry(this.contextHistory, item.context.uri);
-
-                this.contextHistory[item.context.uri] = item.item.uri;
-            }
-
-            return this.contextHistory;
-        });
-    }*/
-
     getContextHistory() {
-        const contextPromises = Object.keys(this.contextHistory)
-            .map(val => this.getContextInfo(val));
-        const trackPromises = Object.values(this.contextHistory)
-            .map(val => this.getTrackInfo(val));
-
-        return Promise.all(contextPromises.concat(trackPromises))
-            .then((spotifyObjs) => {
-                const filledContext = [];
-
-                // The first half are the contexts
-                // The second half are the tracks
-                const context = spotifyObjs.splice(0, spotifyObjs.length / 2);
-
-                context.forEach((value, index) => {
-                    filledContext.push({
-                        context: value,
-                        track: spotifyObjs[index],
-                    });
-                });
-
-                return filledContext;
-            });
+        return this.contextHistory;
     }
 
     getUpdatedContextHistory() {
         return this.update().then(() => this.getContextHistory());
     }
 
-    getContextInfo(uri) {
-        const contextId = getId(uri);
-
-        return this.spotifyWebApi.getPlaylist(contextId)
-            .catch(() => this.spotifyWebApi.getAlbum(contextId))
-            .then(res => res.body);
-    }
-
-    getTrackInfo(uri) {
-        return this.spotifyWebApi.getTrack(getId(uri)).then(res => res.body);
-    }
-
     // If the context has not been found, it tries to play from the beginning
     play(context) {
-        const key = Object.keys(this.contextHistory).find(el => getId(el) === getId(context));
+        const element = this.contextHistory.find(el => el.context.id === this[getId](context));
 
-        return this.spotifyWebApi.play({
+        const options = {
             context_uri: context,
-            offset: { uri: this.contextHistory[key] },
-        })
-            .catch(() => this.spotifyWebApi.play({ context_uri: context }));
+        };
+
+        if (element) {
+            return this.spotifyWebApi.play({
+                ...options,
+                offset: { uri: element.track.uri },
+            })
+                .catch(() => this.spotifyWebApi.play(options));
+        }
+
+        return this.spotifyWebApi.play(options);
     }
 
-    /////////////////////
-    // Private methods //
-    /////////////////////
+    // /////////////////////
+    // // Private methods //
+    // /////////////////////
 
-    [getContextBuckets](items, typesOfContext) {
+    static [getContextBuckets](items, typesOfContext) {
         const buckets = new Array(typesOfContext.length);
-        for (let i = 0; i < buckets.length; i++) {
+        for (let i = 0; i < buckets.length; i += 1) {
             buckets[i] = [];
         }
 
@@ -210,31 +117,29 @@ class SpotifyContextHistory {
                 return;
             }
 
-            const contextOfTheTrack = item.context.type;
+            const ctxOfTheTrack = item.context.type;
 
-            const index = typesOfContext.findIndex((contextType) => {
-                // It is used `indexOf` instead of a comparison (`===`) to prevent false positives.
-                // For instance, Spotify versioned `playlist` to `playlist_v2`
-                // https://github.com/spotify/web-api/issues/995
-                return contextOfTheTrack.indexOf(contextType) !== -1;
-            });
+            // It is used `indexOf` instead of a comparison (`===`) to prevent false positives.
+            // For instance, Spotify versioned `playlist` to `playlist_v2`
+            // https://github.com/spotify/web-api/issues/995
+            const idx = typesOfContext.findIndex(ctxType => ctxOfTheTrack.indexOf(ctxType) !== -1);
 
-            if (index === -1) {
-                console.warn(`spotify-context-history: Unrecognised context type: ${contextOfTheTrack}`);
+            if (idx === -1) {
+                console.warn(`spotify-context-history: Unrecognised context type: ${ctxOfTheTrack}`);
             } else {
-                buckets[index].push(item);
+                buckets[idx].push(item);
             }
         });
 
         return buckets;
     }
 
-    [getSuccessfulPlaylistRequests](responses) {
+    static [getSuccessfulPlaylistRequests](responses) {
         return responses.filter((playlistResponse) => {
             const isSuccessfulRequest = playlistResponse.statusCode === 200;
 
             if (!isSuccessfulRequest) {
-                console.error(`spotify-context-history: Failed to get playlist (it will be ignored): ${playlistResponse}`);
+                console.warn(`spotify-context-history: Failed to get playlist (it will be ignored): ${playlistResponse}`);
             }
 
             return isSuccessfulRequest;
@@ -248,18 +153,18 @@ class SpotifyContextHistory {
         const uniqueIds = Array.from(new Set(ids));
 
         return Promise.all(uniqueIds.map(id => this.spotifyWebApi.getPlaylist(id)))
-            .then(res => this[getSuccessfulPlaylistRequests](res))
+            .then(res => SpotifyContextHistory[getSuccessfulPlaylistRequests](res))
             .then(res => res.map(r => r.body))
             .then(res => ids.map(id => res.find(playlistResponse => playlistResponse.id === id)));
     }
 
-    [getContextPromises](buckets, fns) {
+    static [getContextPromises](buckets, fns) {
         const promises = [];
 
         fns.forEach((fn, index) => {
             const bucket = buckets[index];
 
-            const ids = bucket.map(item => getId(item.context.uri));
+            const ids = bucket.map(item => this[getId](item.context.uri));
 
             if (ids.length > 0) {
                 promises.push(fn(ids));
@@ -275,7 +180,7 @@ class SpotifyContextHistory {
         // `!res.body.items` should not be necessary, but given that Spotify's documentation is in
         // beta it is preferable to be careful
         if (res.statusCode !== 200 || !res.body.items) {
-            return;
+            return Promise.resolve();
         }
 
         const { items } = res.body;
@@ -293,9 +198,15 @@ class SpotifyContextHistory {
                 fn: ids => this[getPlaylists](ids),
             }];
 
-        const buckets = this[getContextBuckets](items, typesOfContext.map(el => el.key));
+        const buckets = SpotifyContextHistory[getContextBuckets](
+            items,
+            typesOfContext.map(el => el.key),
+        );
 
-        const promises = this[getContextPromises](buckets, typesOfContext.map(el => el.fn));
+        const promises = SpotifyContextHistory[getContextPromises](
+            buckets,
+            typesOfContext.map(el => el.fn),
+        );
 
         return Promise.all(promises)
             .then((bucketedResponses) => {
@@ -334,6 +245,10 @@ class SpotifyContextHistory {
                 }
             }
         });
+    }
+
+    static [getId](uri) {
+        return uri.split(':').pop();
     }
 }
 
