@@ -25,6 +25,7 @@ const getPlaylists = Symbol('getPlaylists');
 const getContextPromises = Symbol('getContextPromises');
 const handleRecentlyPlayedTracksResponse = Symbol('handleRecentlyPlayedTracksResponse');
 const getSuccessfulPlaylistRequests = Symbol('getSuccessfulPlaylistRequests');
+const addToContextHistory = Symbol('addToContextHistory');
 
 class SpotifyContextHistory {
     constructor(accessToken) {
@@ -61,7 +62,31 @@ class SpotifyContextHistory {
         }
 
         return this.spotifyWebApi.getMyRecentlyPlayedTracks(options)
-            .then(res => this[handleRecentlyPlayedTracksResponse](res));
+            .then((res) => {
+                let shouldUpdate = false;
+                if (res.statusCode === 200 && res.body && res.body.cursors) {
+                    const { cursors } = res.body;
+
+                    if (cursors.after) {
+                        shouldUpdate = true;
+                        this.afterTimestamp = cursors.after;
+                    }
+                }
+
+                return [shouldUpdate, res];
+            })
+            .then(([sU, res]) => this[handleRecentlyPlayedTracksResponse](res)
+                .then(ret => [sU, ret]), console.error)
+            .then(([sU, context]) => {
+                this[addToContextHistory](context);
+                return sU;
+            })
+            .then((sU) => {
+                if (sU) {
+                    return this.update();
+                }
+                return Promise.resolve();
+            });
     }
 
 
@@ -236,7 +261,11 @@ class SpotifyContextHistory {
 
             const ids = bucket.map(item => getId(item.context.uri));
 
-            promises.push(fn(ids));
+            if (ids.length > 0) {
+                promises.push(fn(ids));
+            } else {
+                promises.push([]);
+            }
         });
 
         return promises;
@@ -268,7 +297,7 @@ class SpotifyContextHistory {
 
         const promises = this[getContextPromises](buckets, typesOfContext.map(el => el.fn));
 
-        Promise.all(promises)
+        return Promise.all(promises)
             .then((bucketedResponses) => {
                 const context = [];
 
@@ -284,6 +313,27 @@ class SpotifyContextHistory {
 
                 return context;
             });
+    }
+
+    [addToContextHistory](context) {
+        if (!context) {
+            return;
+        }
+
+        context.forEach((ctxObj) => {
+            const index = this.contextHistory.findIndex(h => h.context.id === ctxObj.context.id);
+
+            if (index === -1) {
+                this.contextHistory.push(ctxObj);
+            } else {
+                const ctxHistPlayedAt = new Date(this.contextHistory[index].played_at).getTime();
+                const ctxObjPlayedAt = new Date(ctxObj.played_at).getTime();
+
+                if (ctxHistPlayedAt < ctxObjPlayedAt) {
+                    this.contextHistory[index] = ctxObj;
+                }
+            }
+        });
     }
 }
 
