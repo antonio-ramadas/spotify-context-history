@@ -74,3 +74,4 @@ spotifyContextHistory.play("album/playlist's id/uri")
  - Premium user account in order to [use the play method](https://developer.spotify.com/documentation/web-api/reference/player/start-a-users-playback/).
  - Despite what the docs lead to assume about [_Current User's Playback Tracks_](https://developer.spotify.com/documentation/web-api/reference/player/get-recently-played/), the API does **not** return all the songs since a given period of time. [It seems that it only returns the 50 most recent songs](
 https://github.com/spotify/web-api/issues/20). Nonetheless, this package ignores this restriction and still tries to get more tracks than 50. If Spotify lifts this restriction, this package should work seamlessly.
+ - The play method [will not work while there is no available devices](https://developer.spotify.com/documentation/web-api/reference/player/start-a-users-playback/).
