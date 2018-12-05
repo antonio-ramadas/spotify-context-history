@@ -1,16 +1,16 @@
 # Spotify Context History
 
-[npm package](https://www.npmjs.com/package/spotify-context-history) to work on top of the context history from a Spotify user. You can retrieve the context (most recent played tracks) and resume playing [a context](#why-naming-it-context).
+[npm package](https://www.npmjs.com/package/spotify-context-history) to work on top of the context history from a Spotify user. You can retrieve the context (most recently played tracks) and resume playing [a context](#why-name-it-context).
 
 ## Use case
 
-An user is listening to an album named Foo and stops listening to in the middle of it. It then starts listening another album named Bar and it listens to just a couple of tracks.
+A user is listening to an album named Foo and stops listening to in the middle of it. It then starts listening to another album named Bar and it listens to just a couple of tracks.
 
 In a normal scenario, if he/she is using the app from Spotify, then going back to play Foo does not resume playing to the last track.
 
 This package empowers you with the ability to build this _feature_. Both albums Foo and Bar are separate contexts and **each context points to the last track played**. Hence, you can resume playing a context (an album in the given example).
 
-### Why naming it context?
+### Why name it "context"?
 
 In the previous example, it is only talked about **albums**. But this package also supports **playlists** and **artists**. A track can be from one of these three types depending on the **context** where it was played to.
 
