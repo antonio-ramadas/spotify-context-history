@@ -1,6 +1,6 @@
 # Spotify Context History
 
-[npm package](https://www.npmjs.com/package/spotify-context-history) to work on top of the context history from a Spotify user. You can retrieve the context (most recent played tracks) and resume playing [a context](#why-naming-it-context?).
+[npm package](https://www.npmjs.com/package/spotify-context-history) to work on top of the context history from a Spotify user. You can retrieve the context (most recent played tracks) and resume playing [a context](#why-naming-it-context).
 
 ## Use case
 
